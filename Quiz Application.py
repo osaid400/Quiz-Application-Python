@@ -3,6 +3,10 @@
 # Language: Python
 # Level: Beginner
 
+import json
+import os
+from datetime import datetime
+
 print ("============ Welcome to Quiz Application =============")
 
 # ------------------------------------------ Quiz Application -------------------------------------------------------
@@ -79,6 +83,18 @@ hard_questions = [
 score = 0
 questions = []
 
+def load_history():
+    if os.path.exists("quiz_history.json"):
+        with open("quiz_history.json", "r") as file:
+            data = json.load(file)
+        return data
+    else:
+        return []
+
+def save_history(history):
+    with open("quiz_history.json", "w") as file:
+        json.dump(history, file, indent=4)
+
 def select_level():
     global questions, selected_level
 
@@ -135,6 +151,15 @@ def start_quiz():
 
         print()
         show_result()
+
+        history = load_history()
+        history.append({
+            "Level": selected_level,
+            "Score": score,
+            "Total": len(questions),
+            "Date": datetime.now().strftime("%d-%m-%Y")
+        })
+        save_history(history)
 
         while True:
             replay = input("Do you want to play again? Yes/No: ").strip().lower()
@@ -194,16 +219,24 @@ def show_result():
         print("Status: FAIL! \nBetter Luck Next Time")
     print("---------------------------------------------------")
 
+def view_history():
+    history = load_history()
+    if not history:
+        print("No history found.")
+        return
+    print("="*60)
+    print("                   SCORE HISTORY                  ")
+    print("="*60)
+    print("="*60)
+    print("{:<20} {:<20} {:<20} ".format("Date", "Level", "Score"))
+    print("="*60)
+    for record in history:
+        print(f"{record['Date']:<18}  Level: {record['Level']:<15} {record['Score']}/{record['Total']}")
+
 def restart_quiz():
     global score
     score = 0
     start_quiz()
-
-def last_game_score():
-    if not questions:
-        print("No quiz has been played yet. Start a quiz first.")
-        return
-    show_result()
 
 def exit_system():
     print("Thank you for using the Quiz Application!")
@@ -218,7 +251,7 @@ while True:
     print("=============== Select the Option (0-4) ===============")
     print("1. Start New Quiz")
     print("2. Game Instructions")
-    print("3. View Last Game Result")
+    print("3. View Score History")
     print("4. Restart Quiz")
     print("0. Exit")
 
@@ -236,7 +269,7 @@ while True:
     elif choice == 2:
         quiz_game_instruction()
     elif choice == 3:
-        last_game_score()
+        view_history()
     elif choice == 4:
         restart_quiz()
     elif choice == 0:
