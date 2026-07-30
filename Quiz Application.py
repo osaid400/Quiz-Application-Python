@@ -209,7 +209,7 @@ class QuizManager:
         print("\n" + "=" * 60)
         print(f"{'SCORE HISTORY':^60}")
         print("=" * 60)
-        print(f"{'Date':<22} {'Level':<18} {'Score':<15}")
+        print(f"{'Date & Time':<22} {'Level':<18} {'Score':<15}")
         print("=" * 60)
         for record in self.history:
             score_str = f"{record['Score']}/{record['Total']}"
