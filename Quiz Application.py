@@ -4,8 +4,7 @@
 
 import json
 import sys
-from datetime import datetime
-
+from datetime import datetime 
 
 class Question:
     def __init__(self, level, question, options, answer):
@@ -213,7 +212,7 @@ class QuizManager:
         print("=" * 60)
         for record in self.history:
             score_str = f"{record['Score']}/{record['Total']}"
-            print(f"{record['Date']:<22} {record['Level']:<18} {score_str:<15}")
+            print(f"{record['Date & Time']:<22} {record['Level']:<18} {score_str:<15}")
         print("=" * 60)
 
     def restart_quiz(self):
