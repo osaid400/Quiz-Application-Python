@@ -6,6 +6,7 @@ import json
 import sys
 from datetime import datetime 
 
+
 class Question:
     def __init__(self, level, question, options, answer):
         self.level = level
@@ -135,9 +136,9 @@ class QuizManager:
                 "Level": self.selected_level,
                 "Score": self.score,
                 "Total": total_q,
+                "Percentage": self.percentage,
                 "Date": datetime.now().strftime("%d-%m-%Y %H:%M")
             })
-            self.save_history()
 
             # Prompt replay
             while True:
@@ -171,49 +172,68 @@ class QuizManager:
 
     def show_result(self):
         total = len(self.selected_questions)
+
         print("\n================ QUIZ RESULT ================")
+
         if total == 0:
             print("No questions were answered.")
             return
 
-        print(f"Correct Answers: {self.score}")
-        print(f"Wrong Answers: {total - self.score}")
-        print(f"Your final score is: {self.score}/{total}")
+        self.percentage = (self.score / total) * 100
 
-        percentage = (self.score / total) * 100
-        print(f"Percentage: {percentage:.2f}%")
+        print(f"Correct Answers : {self.score}")
+        print(f"Wrong Answers   : {total - self.score}")
+        print(f"Final Score     : {self.score}/{total}")
+        print(f"Percentage      : {self.percentage:.2f}%")
 
-        if percentage >= 90:
+        if self.percentage >= 90:
             print("Status: EXCELLENT!")
-        elif percentage >= 80:
+        elif self.percentage >= 80:
             print("Status: VERY GOOD!")
-        elif percentage >= 70:
+        elif self.percentage >= 70:
             print("Status: GOOD!")
-        elif percentage >= 60:
+        elif self.percentage >= 60:
             print("Status: AVERAGE!")
-        elif percentage >= 50:
+        elif self.percentage >= 50:
             print("Status: PASS!")
         else:
             print("Status: FAIL!\nBetter Luck Next Time")
+
         print("---------------------------------------------------")
 
     def view_history(self):
         self.load_history()
+
         if not self.history:
             print("============================")
             print("No history found.")
             print("============================")
             return
 
-        print("\n" + "=" * 60)
-        print(f"{'SCORE HISTORY':^60}")
-        print("=" * 60)
-        print(f"{'Date & Time':<22} {'Level':<18} {'Score':<15}")
-        print("=" * 60)
+        print("\n" + "=" * 80)
+        print(f"{'SCORE HISTORY':^80}")
+        print("=" * 80)
+
+        print(
+            f"{'Date':<20}"
+            f"{'Level':<12}"
+            f"{'Score':<10}"
+            f"{'Percentage':<12}"
+        )
+
+        print("=" * 80)
+
         for record in self.history:
-            score_str = f"{record['Score']}/{record['Total']}"
-            print(f"{record['Date & Time']:<22} {record['Level']:<18} {score_str:<15}")
-        print("=" * 60)
+            score = f"{record['Score']}/{record['Total']}"
+
+            print(
+                f"{record['Date']:<20}"
+                f"{record['Level']:<12}"
+                f"{score:<10}"
+                f"{str(record['Percentage']) + '%':<12}"
+            )
+
+        print("=" * 80)
 
     def restart_quiz(self):
         self.score = 0
