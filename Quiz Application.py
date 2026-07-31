@@ -4,11 +4,12 @@
 
 import json
 import sys
-from datetime import datetime 
+from datetime import datetime
 
 
 class Question:
-    def __init__(self, level, question, options, answer):
+    def __init__(self, category, level, question, options, answer):
+        self.category = category
         self.level = level
         self.question = question
         self.options = options
@@ -16,6 +17,7 @@ class Question:
 
     def to_dict(self):
         return {
+            "Category": self.category,
             "Level": self.level,
             "Question": self.question,
             "Options": self.options,
@@ -25,6 +27,7 @@ class Question:
     @classmethod
     def from_dict(cls, question_data):
         return cls(
+            category = question_data.get("Category"),
             level=question_data["Level"],
             question=question_data["Question"],
             options=question_data["Options"],
@@ -43,7 +46,9 @@ class QuizManager:
         self.history = []
 
         self.selected_level = ""
+        self.selected_category = None
         self.score = 0
+        self.quiz_stopped = False
 
         self.load_questions()
         self.load_history()
@@ -68,7 +73,37 @@ class QuizManager:
         with open(self.history_file, "w") as file:
             json.dump(self.history, file, indent=4)
 
+    def select_category(self):
+        categories = sorted(set(q.category for q in self.questions))
+        if not categories:
+            print("No categories available in the questions file.")
+            return False
+
+        print("\n--- Select Category ---")
+        for idx, category in enumerate(categories, start=1):
+            print(f"{idx}. {category}")
+
+        try:
+            choice_category = int(input("Select Category: "))
+            if 1 <= choice_category <= len(categories):
+                self.selected_category = list(categories)[choice_category - 1]
+                # Filter questions matching the selected category
+                self.selected_questions = [
+                    q for q in self.questions if q.category == self.selected_category
+                ]
+                return True
+            else:
+                print("Invalid Choice! Please select a valid category number.")
+                return False
+        except ValueError:
+            print("Invalid input! Please enter a number corresponding to the category.")
+            return False
+
     def select_level(self):
+        if self.selected_category is None:
+            print("Please select a category first.")
+            return False
+
         print("\n--- Select Difficulty Level ---")
         print("1. Easy")
         print("2. Medium")
@@ -90,34 +125,46 @@ class QuizManager:
             print("Invalid Choice! Please enter 1, 2, or 3.")
             return False
 
-        # Filter questions matching the selected level
+        # Filter questions matching both the selected category and level
         self.selected_questions = [
-            q for q in self.questions if q.level.lower() == self.selected_level.lower()
+            q for q in self.questions
+            if q.category == self.selected_category and q.level.lower() == self.selected_level.lower()
         ]
 
+        # Keep only the first 20 questions for the selected category/level
+        self.selected_questions = self.selected_questions[:20]
+
         if not self.selected_questions:
-            print(f"No questions found for '{self.selected_level}' level in {self.questions_file}.")
+            print(f"No questions found for '{self.selected_level}' level in category '{self.selected_category}'.")
             return False
 
         return True
 
     def quiz_game_instruction(self):
         print("\n================= INSTRUCTIONS =================")
-        print(f"- Total Questions Loaded: {len(self.questions)}")
+        print("- Welcome to the Quiz Application!")
+        print("- There are 5 categories of questions available.")
+        print("- You can select a category and difficulty level to start the quiz.")
+        print(f"- Each category has 20 questions for each level (Easy, Medium, Hard).")
         print("- Each question carries one mark.")
         print("- Enter only A, B, C, or D.")
         print("- No negative marking.")
         print("==================================================")
 
     def start_quiz(self):
+        if not self.select_category():
+            return
+
         if not self.select_level():
             return
 
         while True:
             self.score = 0
+            self.quiz_stopped = False
             total_q = len(self.selected_questions)
 
             print("---------------------------------------------------")
+            print(f"Selected Category: {self.selected_category}")
             print(f"Selected Level: {self.selected_level}")
             print(f"Number of Questions: {total_q}")
             print("The quiz will begin now.")
@@ -126,25 +173,32 @@ class QuizManager:
             for i, question in enumerate(self.selected_questions, start=1):
                 print(f"\nQuestion {i}/{total_q}")
                 self.show_question(question)
-                self.check_answer(question)
+                if not self.check_answer(question):
+                    break
                 print("---------------------------------------------------")
 
             self.show_result()
 
             # Record and save history
             self.history.append({
+                "Category": self.selected_category,
                 "Level": self.selected_level,
                 "Score": self.score,
                 "Total": total_q,
                 "Percentage": self.percentage,
-                "Date": datetime.now().strftime("%d-%m-%Y %H:%M")
+                "Date and Time": datetime.now().strftime("%d-%m-%Y %H:%M")
             })
+            self.save_history()
+
+            if self.quiz_stopped:
+                print("You quit the quiz. Returning to the main menu.")
+                return
 
             # Prompt replay
             while True:
                 replay = input("Do you want to play again? (Yes/No): ").strip().lower()
                 if replay in ["yes", "y"]:
-                    if not self.select_level():
+                    if not self.select_category():
                         return
                     break
                 elif replay in ["no", "n"]:
@@ -159,7 +213,11 @@ class QuizManager:
 
     def check_answer(self, question):
         while True:
-            answer = input("Enter Answer (A/B/C/D): ").strip().upper()
+            answer = input("Enter Answer (A/B/C/D) or Q to Quit: ").strip().upper()
+            if answer in ["Q", "QUIT"]:
+                print("You chose to quit the quiz.")
+                self.quiz_stopped = True
+                return False
             if answer in ["A", "B", "C", "D"]:
                 break
             print("Invalid option! Choose A, B, C, or D.")
@@ -169,6 +227,8 @@ class QuizManager:
             self.score += 1
         else:
             print(f"Wrong Answer! The correct answer was: {question.answer}")
+
+        return True
 
     def show_result(self):
         total = len(self.selected_questions)
@@ -181,12 +241,16 @@ class QuizManager:
 
         self.percentage = (self.score / total) * 100
 
+        print(f"Your Category    : {self.selected_category}")
+        print(f"Your Level       : {self.selected_level}")
         print(f"Correct Answers : {self.score}")
         print(f"Wrong Answers   : {total - self.score}")
         print(f"Final Score     : {self.score}/{total}")
         print(f"Percentage      : {self.percentage:.2f}%")
 
-        if self.percentage >= 90:
+        if self.quiz_stopped:
+            print("Status: QUIIT EARLY")
+        elif self.percentage >= 90:
             print("Status: EXCELLENT!")
         elif self.percentage >= 80:
             print("Status: VERY GOOD!")
@@ -215,7 +279,8 @@ class QuizManager:
         print("=" * 80)
 
         print(
-            f"{'Date':<20}"
+            f"{'Date and Time':<20}"
+            f"{'Category':<25}"
             f"{'Level':<12}"
             f"{'Score':<10}"
             f"{'Percentage':<12}"
@@ -227,7 +292,8 @@ class QuizManager:
             score = f"{record['Score']}/{record['Total']}"
 
             print(
-                f"{record['Date']:<20}"
+                f"{record['Date and Time']:<20}"
+                f"{record['Category']:<25}"
                 f"{record['Level']:<12}"
                 f"{score:<10}"
                 f"{str(record['Percentage']) + '%':<12}"
