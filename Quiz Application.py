@@ -249,7 +249,7 @@ class QuizManager:
         print(f"Percentage      : {self.percentage:.2f}%")
 
         if self.quiz_stopped:
-            print("Status: QUIIT EARLY")
+            print("Status: Quit EARLY")
         elif self.percentage >= 90:
             print("Status: EXCELLENT!")
         elif self.percentage >= 80:
@@ -323,7 +323,6 @@ def main():
         print("1. Start New Quiz")
         print("2. Game Instructions")
         print("3. View Score History")
-        print("4. Restart Quiz")
         print("0. Exit")
 
         try:
@@ -338,12 +337,10 @@ def main():
             manager.quiz_game_instruction()
         elif choice == 3:
             manager.view_history()
-        elif choice == 4:
-            manager.restart_quiz()
         elif choice == 0:
             manager.exit_system()
         else:
-            print("Invalid Choice! Choose between 0 to 4")
+            print("Invalid Choice! Choose between 0 to 3")
 
 
 if __name__ == "__main__":
