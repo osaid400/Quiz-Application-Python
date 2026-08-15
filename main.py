@@ -1,4 +1,4 @@
-# ======================================s
+# ======================================
 # QUIZ APPLICATION 
 # Author: Muhammad Abdullah Farooq  
 # Language: Python 3.13
