@@ -3,23 +3,26 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Data directory runtime files / backups (Keeps JSON templates, ignores backups)
-data/*.corrupted_*
-data/*_backup.json
+# Data Directory (Ignore generated JSON data & backups)
+data/*.json
+!data/.gitkeep
 
-# Environments
+# Environments & Virtual Envs
 .env
 .venv
 env/
 venv/
 ENV/
+env.bak/
+venv.bak/
 
-# IDE & Editor files
+# IDE & Editor Directories
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-workspace
 
-# OS generated files
+# OS Generated Files
 .DS_Store
 Thumbs.db
